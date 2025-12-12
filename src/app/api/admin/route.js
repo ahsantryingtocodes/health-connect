@@ -21,17 +21,47 @@ export async function PATCH(request) {
     const body = await request.json();
     const { email, isVerified, role } = body;
 
+    // First, get the user to check their role and specialization
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
+    // Update user verification status
     const updatedUser = await prisma.user.update({
       where: { email },
       data: { 
         isVerified: isVerified,
-        role: role 
+        ...(role && { role: role })
       },
     });
 
+    // If verifying a doctor and they have specialization, create DoctorProfile
+    if (isVerified && updatedUser.role === 'DOCTOR' && updatedUser.specialization) {
+      // Check if DoctorProfile already exists
+      const existingProfile = await prisma.doctorProfile.findUnique({
+        where: { userId: updatedUser.id },
+      });
+
+      if (!existingProfile) {
+        // Create DoctorProfile
+        await prisma.doctorProfile.create({
+          data: {
+            userId: updatedUser.id,
+            specialization: updatedUser.specialization,
+            availableToday: false,
+          },
+        });
+      }
+    }
+
     return NextResponse.json({ message: 'User updated', user: updatedUser });
   } catch (error) {
-    return NextResponse.json({ message: 'Update failed' }, { status: 500 });
+    console.error('Admin update error:', error);
+    return NextResponse.json({ message: 'Update failed', error: error.message }, { status: 500 });
   }
 }
 

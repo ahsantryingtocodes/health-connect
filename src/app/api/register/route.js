@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, email, password, role, contactNumber } = body;
+    const { name, email, password, role, contactNumber, specialization } = body;
 
     // 1. Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -18,11 +18,19 @@ export async function POST(request) {
       );
     }
 
-    // 2. Determine Verification Status
+    // 2. Validate specialization for doctors
+    if (role === 'DOCTOR' && !specialization) {
+      return NextResponse.json(
+        { message: 'Specialization is required for doctors.' },
+        { status: 400 }
+      );
+    }
+
+    // 3. Determine Verification Status
     // Doctors must be verified by an admin (false), Patients are auto-verified (true)
     const isVerified = role === 'DOCTOR' ? false : true;
 
-    // 3. Create User
+    // 4. Create User
     const newUser = await prisma.user.create({
       data: {
         name,
@@ -30,6 +38,7 @@ export async function POST(request) {
         password, 
         role,
         contactNumber,
+        specialization: role === 'DOCTOR' ? specialization : null,
         isVerified, // Save the status
       },
     });

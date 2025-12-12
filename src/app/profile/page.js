@@ -192,6 +192,35 @@ export default function ProfilePage() {
 
         <hr className="my-8 border-gray-300" />
         
+        {/* Role-based Navigation */}
+        {user.role === 'PATIENT' && (
+          <div className="mb-6 space-y-3">
+            <a
+              href="/book-appointment"
+              className="block w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-bold text-center"
+            >
+              Book Appointment
+            </a>
+            <a
+              href="/patient-dashboard"
+              className="block w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-center"
+            >
+              My Appointments Dashboard
+            </a>
+          </div>
+        )}
+        
+        {user.role === 'DOCTOR' && (
+          <div className="mb-6">
+            <a
+              href="/doctor-dashboard"
+              className="block w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-bold text-center"
+            >
+              Go to Doctor Dashboard
+            </a>
+          </div>
+        )}
+        
         <div className="flex justify-between items-center">
           <button onClick={handleLogout} className="text-gray-600 hover:text-black font-bold">Log Out</button>
           <button onClick={handleDelete} className="text-red-600 hover:text-red-800 font-bold hover:bg-red-50 px-3 py-2 rounded transition">Delete Account</button>

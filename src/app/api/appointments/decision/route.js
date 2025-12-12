@@ -18,6 +18,20 @@ export async function PUT(request) {
       include: { patient: true },
     });
 
+    // Notify patient about decision
+    if (updated.patient?.email) {
+      const message =
+        status === 'CONFIRMED'
+          ? 'Your appointment has been confirmed by the doctor.'
+          : 'Your appointment request was rejected by the doctor.';
+      await prisma.notification.create({
+        data: {
+          userEmail: updated.patient.email,
+          message,
+        },
+      });
+    }
+
     return NextResponse.json({
       message: `Appointment ${status.toLowerCase()}`,
       appointment: updated,

@@ -15,6 +15,7 @@ model User {
   password      String
   role          Role     @default(PATIENT)
   isVerified    Boolean  @default(false) // <--- ADD THIS LINE
+  specialization String? // For doctors - stored during registration
   createdAt     DateTime @default(now())
 
   doctorProfile DoctorProfile?
@@ -83,4 +84,12 @@ model Medicine {
   notes           String?
 
   prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  userEmail  String
+  message    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }

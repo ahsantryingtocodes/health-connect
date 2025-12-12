@@ -20,6 +20,20 @@ export async function POST(request) {
       },
     });
 
+    // Notify doctor about new appointment request
+    const doctorProfile = await prisma.doctorProfile.findUnique({
+      where: { id: doctorProfileId },
+      include: { user: true },
+    });
+    if (doctorProfile?.user?.email) {
+      await prisma.notification.create({
+        data: {
+          userEmail: doctorProfile.user.email,
+          message: 'New appointment request received.',
+        },
+      });
+    }
+
     return NextResponse.json({ message: 'Appointment created', appointment });
   } catch (error) {
     return NextResponse.json({ message: 'Failed to create appointment' }, { status: 500 });

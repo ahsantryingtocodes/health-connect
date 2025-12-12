@@ -11,6 +11,7 @@ export default function RegistrationPage() {
     password: '',
     contactNumber: '', // Added contactNumber to state
     role: 'PATIENT',
+    specialization: '', // For doctors
   });
   const [status, setStatus] = useState('');
 
@@ -105,6 +106,21 @@ export default function RegistrationPage() {
               <option value="DOCTOR">Doctor</option>
             </select>
           </div>
+
+          {formData.role === 'DOCTOR' && (
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1">Specialization *</label>
+              <input
+                type="text"
+                name="specialization"
+                required
+                placeholder="e.g. Cardiology, Pediatrics, General Medicine"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-black"
+                onChange={handleChange}
+                value={formData.specialization}
+              />
+            </div>
+          )}
 
           <button
             type="submit"
