@@ -93,3 +93,14 @@ model Notification {
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 }
+
+model Blog {
+  id             Int      @id @default(autoincrement())
+  authorName     String
+  specialization String?   // nullable for Admin
+  title          String
+  content        String
+
+  authorRole     Role     // DOCTOR or ADMIN
+  createdAt      DateTime @default(now())
+}
