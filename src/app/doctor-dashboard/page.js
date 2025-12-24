@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 export default function DoctorDashboardPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function DoctorDashboardPage() {
   useEffect(() => {
     const userEmail = localStorage.getItem('userEmail');
     if (!userEmail) {
+      setLoading(false);
       router.push('/login');
       return;
     }
@@ -189,176 +191,256 @@ export default function DoctorDashboardPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!user || user.role !== 'DOCTOR') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
-          <p className="text-gray-700 mb-6">Only doctors can access this dashboard.</p>
-          <a href="/profile" className="text-blue-600 hover:underline font-bold">Go to Profile</a>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#F0F7FF] pt-24">
+        <div className="text-[#0F2D52] font-bold text-lg">Loading...</div>
       </div>
     );
   }
 
+  if (!user || user.role !== 'DOCTOR') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F0F7FF] p-4 pt-24">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+          className="bg-white p-10 rounded-[24px] card-shadow text-center max-w-md"
+        >
+          <h2 className="text-3xl font-bold text-red-600 mb-6 tracking-wide">Access Denied</h2>
+          <p className="text-[#4a5568] mb-8">Only doctors can access this dashboard.</p>
+          <a href="/profile" className="text-[#739AF0] hover:underline font-semibold">Go to Profile</a>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+        damping: 12,
+      },
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 text-gray-900">
+    <div className="min-h-screen bg-[#F0F7FF] py-8 px-4 pt-24 text-[#0F2D52]">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+          className="bg-white rounded-[24px] card-shadow p-8 mb-6"
+        >
           {/* Unread Notification Banner */}
           {bannerNote && (
-            <div className="mb-4 p-4 rounded-lg bg-yellow-100 border border-yellow-200 text-gray-900 flex justify-between items-start">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mb-6 p-5 rounded-[20px] bg-yellow-50 border-2 border-yellow-200 text-[#0F2D52] flex justify-between items-start"
+            >
               <div>
                 <p className="font-bold text-sm text-yellow-900">New notification</p>
-                <p className="text-sm mt-1">{bannerNote.message}</p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-sm mt-1 text-[#4a5568]">{bannerNote.message}</p>
+                <p className="text-xs text-[#4a5568] mt-1">
                   {new Date(bannerNote.createdAt).toLocaleString()}
                 </p>
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => markNotificationRead(bannerNote.id)}
-                className="text-xs font-semibold text-blue-700 hover:underline ml-3"
+                className="text-xs font-semibold text-[#739AF0] hover:underline ml-3"
               >
                 Mark as read
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           )}
 
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-blue-800">Doctor Dashboard</h1>
+              <h1 className="text-4xl font-bold text-[#0F2D52] tracking-wide">Doctor Dashboard</h1>
               {doctorProfile && (
-                <p className="text-gray-800 mt-1">
+                <p className="text-[#4a5568] mt-2 font-semibold">
                   {doctorProfile.user.name} - {doctorProfile.specialization}
                 </p>
               )}
             </div>
-            <a href="/profile" className="text-blue-700 hover:underline font-semibold">← Back to Profile</a>
+            <motion.a
+              href="/profile"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="text-[#739AF0] hover:underline font-semibold"
+            >
+              ← Back to Profile
+            </motion.a>
           </div>
 
           {/* Availability Toggle */}
           {doctorProfile && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-[#F0F7FF] border-2 border-[#F0F7FF] rounded-[20px] p-6 mb-8 card-shadow"
+            >
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-bold text-gray-900">Availability Status</p>
-                  <p className="text-sm text-gray-700 mt-1">
+                  <p className="font-bold text-[#0F2D52] text-lg">Availability Status</p>
+                  <p className="text-sm text-[#4a5568] mt-1">
                     {doctorProfile.availableToday ? 'You are available today' : 'You are not available today'}
                   </p>
                 </div>
-                <button
+                <motion.button
                   onClick={handleToggleAvailability}
-                  className={`px-6 py-2 rounded-md font-bold transition ${
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-6 py-3 rounded-[20px] font-semibold transition-colors duration-300 shadow-lg ${
                     doctorProfile.availableToday
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-green-600 text-white hover:bg-green-700'
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-green-500 text-white hover:bg-green-600'
                   }`}
                 >
                   {doctorProfile.availableToday ? 'Mark Unavailable' : 'Mark Available'}
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Status Message */}
           {status && (
-            <div className={`mb-4 p-3 rounded-md ${
-              status.includes('success') || status.includes('accepted') || status.includes('rejected')
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}>
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mb-6 p-4 rounded-[20px] ${
+                status.includes('success') || status.includes('accepted') || status.includes('rejected')
+                  ? 'bg-green-50 text-green-700 border-2 border-green-200'
+                  : 'bg-red-50 text-red-700 border-2 border-red-200'
+              }`}
+            >
               {status}
-            </div>
+            </motion.div>
           )}
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
-            <button
+          <div className="flex border-b-2 border-[#F0F7FF] mb-8">
+            <motion.button
               onClick={() => setActiveTab('requests')}
-              className={`px-6 py-3 font-bold transition ${
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
                 activeTab === 'requests'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                  : 'text-[#4a5568] hover:text-[#0F2D52]'
               }`}
             >
               Pending Requests ({pendingRequests.length})
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => setActiveTab('upcoming')}
-              className={`px-6 py-3 font-bold transition ${
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
                 activeTab === 'upcoming'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                  : 'text-[#4a5568] hover:text-[#0F2D52]'
               }`}
             >
               Upcoming Appointments ({upcomingAppointments.length})
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => setActiveTab('notifications')}
-              className={`px-6 py-3 font-bold transition ${
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
                 activeTab === 'notifications'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                  : 'text-[#4a5568] hover:text-[#0F2D52]'
               }`}
             >
               Notifications ({notifications.length})
-            </button>
+            </motion.button>
           </div>
 
           {/* Pending Requests Tab */}
           {activeTab === 'requests' && (
             <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Pending Appointment Requests</h2>
+              <h2 className="text-2xl font-bold text-[#0F2D52] mb-6 tracking-wide">Pending Appointment Requests</h2>
               {pendingRequests.length === 0 ? (
-                <p className="text-gray-600">No pending requests.</p>
+                <p className="text-[#4a5568]">No pending requests.</p>
               ) : (
-                <div className="space-y-4">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
                   {pendingRequests.map((appointment) => {
                     const { date: dateStr, time: timeStr } = formatDateTime(appointment.date);
                     return (
-                      <div key={appointment.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <motion.div
+                        key={appointment.id}
+                        variants={itemVariants}
+                        whileHover={{ y: -4 }}
+                        className="border-2 border-[#F0F7FF] rounded-[20px] p-6 bg-[#F0F7FF] card-shadow"
+                      >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h3 className="font-bold text-lg text-gray-900">{appointment.patient.name}</h3>
-                            <p className="text-sm text-gray-800 mt-1">{appointment.patient.email}</p>
+                            <h3 className="font-bold text-xl text-[#0F2D52]">{appointment.patient.name}</h3>
+                            <p className="text-sm text-[#4a5568] mt-1">{appointment.patient.email}</p>
                             {appointment.patient.contactNumber && (
-                              <p className="text-sm text-gray-800">{appointment.patient.contactNumber}</p>
+                              <p className="text-sm text-[#4a5568]">{appointment.patient.contactNumber}</p>
                             )}
-                            <div className="mt-3 space-y-1">
-                              <p className="text-sm">
-                                <span className="font-semibold">Date:</span> {dateStr}
+                            <div className="mt-4 space-y-2">
+                              <p className="text-sm font-semibold text-[#0F2D52]">
+                                <span className="font-bold">Date:</span> {dateStr}
                               </p>
-                              <p className="text-sm">
-                                <span className="font-semibold">Time:</span> {timeStr}
+                              <p className="text-sm font-semibold text-[#0F2D52]">
+                                <span className="font-bold">Time:</span> {timeStr}
                               </p>
-                              <p className="text-sm">
-                                <span className="font-semibold">Type:</span>{' '}
+                              <p className="text-sm font-semibold text-[#0F2D52]">
+                                <span className="font-bold">Type:</span>{' '}
                                 <span className="capitalize">{appointment.consultationType}</span>
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-2 ml-4">
-                            <button
+                          <div className="flex gap-3 ml-4">
+                            <motion.button
                               onClick={() => handleAppointmentDecision(appointment.id, 'ACCEPT')}
-                              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition font-bold"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="px-6 py-3 bg-green-500 text-white rounded-[20px] hover:bg-green-600 transition-colors duration-300 font-semibold shadow-lg"
                             >
                               Accept
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
                               onClick={() => handleAppointmentDecision(appointment.id, 'REJECT')}
-                              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition font-bold"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="px-6 py-3 bg-red-500 text-white rounded-[20px] hover:bg-red-600 transition-colors duration-300 font-semibold shadow-lg"
                             >
                               Decline
-                            </button>
+                            </motion.button>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
               )}
             </div>
           )}
@@ -366,44 +448,54 @@ export default function DoctorDashboardPage() {
           {/* Upcoming Appointments Tab */}
           {activeTab === 'upcoming' && (
             <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Upcoming Confirmed Appointments</h2>
+              <h2 className="text-2xl font-bold text-[#0F2D52] mb-6 tracking-wide">Upcoming Confirmed Appointments</h2>
               {upcomingAppointments.length === 0 ? (
-                <p className="text-gray-600">No upcoming appointments.</p>
+                <p className="text-[#4a5568]">No upcoming appointments.</p>
               ) : (
-                <div className="space-y-4">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
                   {upcomingAppointments.map((appointment) => {
                     const { date: dateStr, time: timeStr } = formatDateTime(appointment.date);
                     return (
-                      <div key={appointment.id} className="border border-gray-200 rounded-lg p-4 bg-blue-50">
+                      <motion.div
+                        key={appointment.id}
+                        variants={itemVariants}
+                        whileHover={{ y: -4 }}
+                        className="border-2 border-[#739AF0] rounded-[20px] p-6 bg-[#F0F7FF] card-shadow"
+                      >
                         <div>
-                          <h3 className="font-bold text-lg text-gray-900">{appointment.patient.name}</h3>
-                          <p className="text-sm text-gray-800 mt-1">{appointment.patient.email}</p>
+                          <h3 className="font-bold text-xl text-[#0F2D52]">{appointment.patient.name}</h3>
+                          <p className="text-sm text-[#4a5568] mt-1">{appointment.patient.email}</p>
                           {appointment.patient.contactNumber && (
-                            <p className="text-sm text-gray-800">{appointment.patient.contactNumber}</p>
+                            <p className="text-sm text-[#4a5568]">{appointment.patient.contactNumber}</p>
                           )}
-                          <div className="mt-3 space-y-1">
-                            <p className="text-sm">
-                              <span className="font-semibold">Date:</span> {dateStr}
+                          <div className="mt-4 space-y-2">
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Date:</span> {dateStr}
                             </p>
-                            <p className="text-sm">
-                              <span className="font-semibold">Time:</span> {timeStr}
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Time:</span> {timeStr}
                             </p>
-                            <p className="text-sm">
-                              <span className="font-semibold">Type:</span>{' '}
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Type:</span>{' '}
                               <span className="capitalize">{appointment.consultationType}</span>
                             </p>
-                            <p className="text-sm">
-                              <span className="font-semibold">Status:</span>{' '}
-                              <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Status:</span>{' '}
+                              <span className="inline-block px-3 py-1 bg-green-200 text-green-800 rounded-full text-xs font-bold">
                                 {appointment.status}
                               </span>
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
               )}
             </div>
           )}
@@ -411,56 +503,66 @@ export default function DoctorDashboardPage() {
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Notifications</h2>
-                <button
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-[#0F2D52] tracking-wide">Notifications</h2>
+                <motion.button
                   onClick={markAllNotificationsRead}
-                  className="text-sm font-semibold text-blue-700 hover:underline"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-sm font-semibold text-[#739AF0] hover:underline"
                 >
                   Mark all as read
-                </button>
+                </motion.button>
               </div>
               {notifications.length === 0 ? (
-                <p className="text-gray-600">No notifications.</p>
+                <p className="text-[#4a5568]">No notifications.</p>
               ) : (
-                <div className="space-y-3">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-3"
+                >
                   {notifications.map((note) => (
-                    <div
+                    <motion.div
                       key={note.id}
-                      className={`border border-gray-200 rounded-lg p-4 ${
-                        note.read ? 'bg-white' : 'bg-blue-50'
-                      }`}
+                      variants={itemVariants}
+                      whileHover={{ y: -2 }}
+                      className={`border-2 rounded-[20px] p-5 ${
+                        note.read ? 'bg-white border-[#F0F7FF]' : 'bg-[#F0F7FF] border-[#739AF0]'
+                      } card-shadow`}
                     >
                       <div className="flex justify-between items-start gap-3">
                         <div>
-                          <p className="text-sm text-gray-900 font-semibold">{note.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-sm text-[#0F2D52] font-semibold">{note.message}</p>
+                          <p className="text-xs text-[#4a5568] mt-1">
                             {new Date(note.createdAt).toLocaleString()}
                           </p>
                         </div>
                         {!note.read && (
-                          <button
+                          <motion.button
                             onClick={() => markNotificationRead(note.id)}
-                            className="text-xs font-semibold text-blue-700 hover:underline"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="text-xs font-semibold text-[#739AF0] hover:underline"
                           >
                             Mark read
-                          </button>
+                          </motion.button>
                         )}
                       </div>
                       {!note.read && (
-                        <span className="mt-2 inline-block px-2 py-0.5 text-xs rounded bg-blue-600 text-white font-bold">
+                        <span className="mt-3 inline-block px-3 py-1 text-xs rounded-full bg-[#739AF0] text-white font-bold">
                           New
                         </span>
                       )}
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );
 }
-

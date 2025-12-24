@@ -28,7 +28,7 @@ export async function GET(request) {
     });
     
     if (user) {
-      const { password, ...userWithoutPass } = user; // Remove password for security
+      const { password, ...userWithoutPass } = user;
       return NextResponse.json(userWithoutPass);
     }
     return NextResponse.json({ message: 'User not found' }, { status: 404 });
