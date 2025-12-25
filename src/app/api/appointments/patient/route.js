@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-// GET: Fetch appointments for a patient
+// GET: Fetch appointments for a patient (only future appointments for CONFIRMED status)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const patientId = searchParams.get('patientId');
@@ -12,9 +12,17 @@ export async function GET(request) {
   }
 
   try {
+    const now = new Date();
+
     const where = {
       patientId: Number(patientId),
       ...(status && { status }),
+      // Only show future appointments for CONFIRMED status
+      ...(status === 'CONFIRMED' && {
+        date: {
+          gte: now,
+        },
+      }),
     };
 
     const appointments = await prisma.appointment.findMany({

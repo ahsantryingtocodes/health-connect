@@ -84,10 +84,19 @@ export default function Home() {
               transition={{ type: 'spring', stiffness: 400, damping: 17 }}
             >
               <Link
-                href="/book-appointment"
+                href="/login"
                 className="inline-block px-10 py-4 bg-[#739AF0] text-white rounded-[24px] text-lg font-semibold shadow-lg hover:bg-[#5a7dd0] transition-colors duration-300"
               >
-                Get An Appointment
+                Login
+              </Link>
+
+              <p className="text-lg text-[#4a5568] mb-10 max-w-2xl mx-auto">
+              </p>
+              <Link
+                href="/register"
+                className="inline-block px-10 py-4 bg-[#739AF0] text-white rounded-[24px] text-lg font-semibold shadow-lg hover:bg-[#5a7dd0] transition-colors duration-300"
+              >
+                Register
               </Link>
             </motion.div>
           </motion.div>
