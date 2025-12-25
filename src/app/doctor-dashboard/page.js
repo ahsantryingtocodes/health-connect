@@ -41,6 +41,13 @@ export default function DoctorDashboardPage() {
     setBannerNote(newestUnread || null);
   }, [notifications]);
 
+  // Check URL hash and switch to notifications tab if needed
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#notifications') {
+      setActiveTab('notifications');
+    }
+  }, []);
+
   const fetchUserProfile = async (email) => {
     try {
       const res = await fetch(`/api/profile?email=${email}`);
@@ -309,11 +316,10 @@ export default function DoctorDashboardPage() {
                   onClick={handleToggleAvailability}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`px-6 py-3 rounded-[20px] font-semibold transition-colors duration-300 shadow-lg ${
-                    doctorProfile.availableToday
+                  className={`px-6 py-3 rounded-[20px] font-semibold transition-colors duration-300 shadow-lg ${doctorProfile.availableToday
                       ? 'bg-red-500 text-white hover:bg-red-600'
                       : 'bg-green-500 text-white hover:bg-green-600'
-                  }`}
+                    }`}
                 >
                   {doctorProfile.availableToday ? 'Mark Unavailable' : 'Mark Available'}
                 </motion.button>
@@ -326,11 +332,10 @@ export default function DoctorDashboardPage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`mb-6 p-4 rounded-[20px] ${
-                status.includes('success') || status.includes('accepted') || status.includes('rejected')
+              className={`mb-6 p-4 rounded-[20px] ${status.includes('success') || status.includes('accepted') || status.includes('rejected')
                   ? 'bg-green-50 text-green-700 border-2 border-green-200'
                   : 'bg-red-50 text-red-700 border-2 border-red-200'
-              }`}
+                }`}
             >
               {status}
             </motion.div>
@@ -342,11 +347,10 @@ export default function DoctorDashboardPage() {
               onClick={() => setActiveTab('requests')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
-                activeTab === 'requests'
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'requests'
                   ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
                   : 'text-[#4a5568] hover:text-[#0F2D52]'
-              }`}
+                }`}
             >
               Pending Requests ({pendingRequests.length})
             </motion.button>
@@ -354,11 +358,10 @@ export default function DoctorDashboardPage() {
               onClick={() => setActiveTab('upcoming')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
-                activeTab === 'upcoming'
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'upcoming'
                   ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
                   : 'text-[#4a5568] hover:text-[#0F2D52]'
-              }`}
+                }`}
             >
               Upcoming Appointments ({upcomingAppointments.length})
             </motion.button>
@@ -366,11 +369,10 @@ export default function DoctorDashboardPage() {
               onClick={() => setActiveTab('notifications')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
-                activeTab === 'notifications'
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'notifications'
                   ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
                   : 'text-[#4a5568] hover:text-[#0F2D52]'
-              }`}
+                }`}
             >
               Notifications ({notifications.length})
             </motion.button>
@@ -528,9 +530,8 @@ export default function DoctorDashboardPage() {
                       key={note.id}
                       variants={itemVariants}
                       whileHover={{ y: -2 }}
-                      className={`border-2 rounded-[20px] p-5 ${
-                        note.read ? 'bg-white border-[#F0F7FF]' : 'bg-[#F0F7FF] border-[#739AF0]'
-                      } card-shadow`}
+                      className={`border-2 rounded-[20px] p-5 ${note.read ? 'bg-white border-[#F0F7FF]' : 'bg-[#F0F7FF] border-[#739AF0]'
+                        } card-shadow`}
                     >
                       <div className="flex justify-between items-start gap-3">
                         <div>

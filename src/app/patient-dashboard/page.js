@@ -38,6 +38,13 @@ export default function PatientDashboardPage() {
     setBannerNote(newestUnread || null);
   }, [notifications]);
 
+  // Check URL hash and switch to notifications tab if needed
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#notifications') {
+      setActiveTab('notifications');
+    }
+  }, []);
+
   const fetchUserProfile = async (email) => {
     try {
       const res = await fetch(`/api/profile?email=${email}`);
@@ -227,11 +234,10 @@ export default function PatientDashboardPage() {
               onClick={() => setActiveTab('confirmed')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
-                activeTab === 'confirmed'
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'confirmed'
                   ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
                   : 'text-[#4a5568] hover:text-[#0F2D52]'
-              }`}
+                }`}
             >
               Confirmed Appointments ({confirmedAppointments.length})
             </motion.button>
@@ -239,11 +245,10 @@ export default function PatientDashboardPage() {
               onClick={() => setActiveTab('pending')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
-                activeTab === 'pending'
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'pending'
                   ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
                   : 'text-[#4a5568] hover:text-[#0F2D52]'
-              }`}
+                }`}
             >
               Pending Requests ({pendingAppointments.length})
             </motion.button>
@@ -251,11 +256,10 @@ export default function PatientDashboardPage() {
               onClick={() => setActiveTab('notifications')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${
-                activeTab === 'notifications'
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'notifications'
                   ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
                   : 'text-[#4a5568] hover:text-[#0F2D52]'
-              }`}
+                }`}
             >
               Notifications ({notifications.length})
             </motion.button>
@@ -405,9 +409,8 @@ export default function PatientDashboardPage() {
                       key={note.id}
                       variants={itemVariants}
                       whileHover={{ y: -2 }}
-                      className={`border-2 rounded-[20px] p-5 ${
-                        note.read ? 'bg-white border-[#F0F7FF]' : 'bg-[#F0F7FF] border-[#739AF0]'
-                      } card-shadow`}
+                      className={`border-2 rounded-[20px] p-5 ${note.read ? 'bg-white border-[#F0F7FF]' : 'bg-[#F0F7FF] border-[#739AF0]'
+                        } card-shadow`}
                     >
                       <div className="flex justify-between items-start gap-3">
                         <div>

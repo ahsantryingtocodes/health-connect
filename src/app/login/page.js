@@ -21,10 +21,11 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Save user email to browser storage
+        // Save user email and role to browser storage
         localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userRole', data.user.role);
         setStatus('Success! Redirecting...');
-        
+
         // Redirect to profile page using standard browser navigation
         setTimeout(() => {
           window.location.href = '/profile';
@@ -46,7 +47,7 @@ export default function LoginPage() {
         className="bg-white p-10 rounded-[24px] card-shadow w-full max-w-md"
       >
         <h2 className="text-3xl font-bold mb-8 text-center text-[#0F2D52] tracking-wide">Welcome Back</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-[#0F2D52] mb-2">Email Address</label>
@@ -54,7 +55,7 @@ export default function LoginPage() {
               type="email"
               required
               className="w-full p-3 border-2 border-[#F0F7FF] rounded-[20px] focus:ring-2 focus:ring-[#739AF0] focus:border-[#739AF0] text-[#0F2D52] font-medium transition-all duration-300"
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
@@ -64,7 +65,7 @@ export default function LoginPage() {
               type="password"
               required
               className="w-full p-3 border-2 border-[#F0F7FF] rounded-[20px] focus:ring-2 focus:ring-[#739AF0] focus:border-[#739AF0] text-[#0F2D52] font-medium transition-all duration-300"
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
           </div>
 

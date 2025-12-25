@@ -13,7 +13,7 @@ export default function ProfilePage() {
   // 1. Check for logged-in user on page load
   useEffect(() => {
     const loggedInEmail = localStorage.getItem('userEmail');
-    
+
     if (!loggedInEmail) {
       setNotLoggedIn(true);
       setLoading(false);
@@ -28,10 +28,10 @@ export default function ProfilePage() {
     try {
       const res = await fetch(`/api/profile?email=${email}`);
       const data = await res.json();
-      
+
       if (res.ok) {
         setUser(data);
-        setFormData(data); 
+        setFormData(data);
       } else {
         alert("User not found.");
       }
@@ -45,6 +45,7 @@ export default function ProfilePage() {
   // 3. Handle Logout
   const handleLogout = () => {
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
@@ -60,7 +61,7 @@ export default function ProfilePage() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      
+
       if (res.ok) {
         setUser(data.user);
         setIsEditing(false);
@@ -76,11 +77,12 @@ export default function ProfilePage() {
   // 5. Handle Delete
   const handleDelete = async () => {
     if (!confirm('WARNING: Are you sure you want to delete your account? This cannot be undone.')) return;
-    
+
     try {
       const res = await fetch(`/api/profile?email=${user.email}`, { method: 'DELETE' });
       if (res.ok) {
         localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
         alert('Account deleted.');
         if (typeof window !== 'undefined') {
           window.location.href = '/';
@@ -119,8 +121,8 @@ export default function ProfilePage() {
             whileTap={{ scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           >
-            <a 
-              href="/login" 
+            <a
+              href="/login"
               className="inline-block w-full bg-[#739AF0] text-white py-3 px-4 rounded-[20px] hover:bg-[#5a7dd0] transition-colors duration-300 font-semibold shadow-lg"
             >
               Go to Login
@@ -159,7 +161,7 @@ export default function ProfilePage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-              onClick={() => setIsEditing(true)} 
+              onClick={() => setIsEditing(true)}
               className="px-6 py-2 text-sm bg-[#F0F7FF] text-[#739AF0] rounded-[20px] hover:bg-[#739AF0] hover:text-white transition-colors duration-300 font-semibold shadow-md"
             >
               Edit Details
@@ -175,7 +177,7 @@ export default function ProfilePage() {
                 type="text"
                 className="w-full p-3 border-2 border-[#F0F7FF] rounded-[20px] focus:ring-2 focus:ring-[#739AF0] focus:border-[#739AF0] text-[#0F2D52] font-medium transition-all duration-300"
                 value={formData.name || ''}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div>
@@ -185,7 +187,7 @@ export default function ProfilePage() {
                 placeholder="e.g. +88017..."
                 className="w-full p-3 border-2 border-[#F0F7FF] rounded-[20px] focus:ring-2 focus:ring-[#739AF0] focus:border-[#739AF0] text-[#0F2D52] font-medium transition-all duration-300"
                 value={formData.contactNumber || ''}
-                onChange={(e) => setFormData({...formData, contactNumber: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
               />
             </div>
             <div className="flex gap-4 pt-2">
@@ -213,50 +215,50 @@ export default function ProfilePage() {
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
-                >
-                    <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Name</p>
-                    <p className="text-lg font-bold text-[#0F2D52]">{user.name}</p>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
-                >
-                    <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Role</p>
-                    <span className="inline-block bg-[#739AF0] text-white text-xs px-3 py-1 rounded-full mt-1 font-semibold">
-                        {user.role}
-                    </span>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
-                >
-                    <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Email</p>
-                    <p className="text-lg font-bold text-[#0F2D52]">{user.email}</p>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
-                >
-                    <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Contact</p>
-                    <p className="text-lg font-bold text-[#0F2D52]">{user.contactNumber || 'Not set'}</p>
-                </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
+              >
+                <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Name</p>
+                <p className="text-lg font-bold text-[#0F2D52]">{user.name}</p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
+              >
+                <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Role</p>
+                <span className="inline-block bg-[#739AF0] text-white text-xs px-3 py-1 rounded-full mt-1 font-semibold">
+                  {user.role}
+                </span>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
+              >
+                <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Email</p>
+                <p className="text-lg font-bold text-[#0F2D52]">{user.email}</p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="p-6 bg-[#F0F7FF] rounded-[20px] border-2 border-transparent hover:border-[#739AF0] transition-all duration-300"
+              >
+                <p className="text-xs text-[#4a5568] uppercase font-bold tracking-wide mb-2">Contact</p>
+                <p className="text-lg font-bold text-[#0F2D52]">{user.contactNumber || 'Not set'}</p>
+              </motion.div>
             </div>
           </div>
         )}
 
         <hr className="my-8 border-[#F0F7FF]" />
-        
+
         {/* Role-based Navigation */}
         {user.role === 'PATIENT' && (
           <div className="mb-6 space-y-4">
@@ -286,7 +288,7 @@ export default function ProfilePage() {
             </motion.div>
           </div>
         )}
-        
+
         {user.role === 'DOCTOR' && (
           <div className="mb-6">
             <motion.div
@@ -303,7 +305,7 @@ export default function ProfilePage() {
             </motion.div>
           </div>
         )}
-        
+
         <div className="flex justify-between items-center">
           <motion.button
             whileHover={{ scale: 1.05 }}
