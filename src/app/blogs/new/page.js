@@ -1,186 +1,302 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import BlogViewModal from '@/components/BlogViewModal';
 
-export default function BlogsPage() {
-    const [blogs, setBlogs] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function NewBlogPage() {
+    const router = useRouter();
     const [userRole, setUserRole] = useState(null);
-    const [selectedBlog, setSelectedBlog] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userName, setUserName] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+
+    const [formData, setFormData] = useState({
+        title: '',
+        authorName: '',
+        specialization: '',
+        content: '',
+    });
+
+    const specializations = [
+        'CARDIOLOGY',
+        'DERMATOLOGY',
+        'PEDIATRICS',
+        'NEUROLOGY',
+        'ORTHOPEDICS',
+        'PSYCHIATRY',
+        'GENERAL_PRACTICE',
+        'ONCOLOGY',
+    ];
 
     useEffect(() => {
-        // Get user role from localStorage
-        const role = localStorage.getItem('userRole');
-        setUserRole(role);
+        const fetchUserData = async () => {
+            // Check user role and redirect if patient
+            const role = localStorage.getItem('userRole');
+            const email = localStorage.getItem('userEmail');
 
-        // Fetch blogs
-        fetchBlogs();
-    }, []);
+            setUserRole(role);
 
-    const fetchBlogs = async () => {
+            if (role === 'PATIENT') {
+                alert('Only doctors and admins can create blog posts.');
+                router.push('/blogs');
+                return;
+            }
+
+            if (!role || !email) {
+                alert('Please login to create a blog post.');
+                router.push('/login');
+                return;
+            }
+
+            // Fetch user data from database
+            try {
+                const res = await fetch(`/api/profile?email=${email}`);
+                if (res.ok) {
+                    const userData = await res.json();
+
+                    // Auto-populate author name and specialization
+                    setFormData((prev) => ({
+                        ...prev,
+                        authorName: userData.name || '',
+                        specialization: userData.specialization || userData.doctorProfile?.specialization || '',
+                    }));
+                } else {
+                    // Fallback to localStorage if API fails
+                    const name = localStorage.getItem('userName') || '';
+                    setFormData((prev) => ({
+                        ...prev,
+                        authorName: name,
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                // Fallback to localStorage
+                const name = localStorage.getItem('userName') || '';
+                setFormData((prev) => ({
+                    ...prev,
+                    authorName: name,
+                }));
+            }
+
+            setLoading(false);
+        };
+
+        fetchUserData();
+    }, [router]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validation
+        if (!formData.title.trim()) {
+            alert('Please enter a title');
+            return;
+        }
+
+        if (!formData.authorName.trim()) {
+            alert('Please enter author name');
+            return;
+        }
+
+        if (userRole === 'DOCTOR' && !formData.specialization) {
+            alert('Please select a specialization');
+            return;
+        }
+
+        if (!formData.content.trim()) {
+            alert('Please enter blog content');
+            return;
+        }
+
+        setSubmitting(true);
+
         try {
-            const res = await fetch('/api/blog');
+            const res = await fetch('/api/blog', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: formData.title,
+                    authorName: formData.authorName,
+                    specialization: userRole === 'DOCTOR' ? formData.specialization : null,
+                    content: formData.content,
+                    authorRole: userRole,
+                }),
+            });
+
             if (res.ok) {
-                const data = await res.json();
-                setBlogs(data);
+                alert('Blog posted successfully!');
+                router.push('/blogs');
+            } else {
+                const error = await res.json();
+                alert(error.message || 'Failed to post blog');
             }
         } catch (error) {
-            console.error('Error fetching blogs:', error);
+            console.error('Error posting blog:', error);
+            alert('An error occurred while posting the blog');
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    };
-
-    const canCreateBlog = userRole === 'DOCTOR' || userRole === 'ADMIN';
+    if (loading) {
+        return (
+            <div className="min-h-screen pt-24 flex items-center justify-center bg-gradient-to-br from-[#F0F7FF] via-white to-[#E8F4FF]">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#739AF0]"></div>
+                    <p className="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen pt-24 pb-12 px-4 md:px-6 bg-gradient-to-br from-[#F0F7FF] via-white to-[#E8F4FF]">
-            <div className="max-w-6xl mx-auto">
-                {/* Header Section */}
+            <div className="max-w-3xl mx-auto">
+                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-center mb-12"
+                    className="text-center mb-8"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold text-[#0F2D52] mb-4">
-                        Health Blog
+                        Create New Blog Post
                     </h1>
-                    <p className="text-lg text-gray-600 mb-8">
-                        Expert insights and health tips from our medical professionals
+                    <p className="text-lg text-gray-600">
+                        Share your medical expertise and insights
                     </p>
-
-                    {/* Create New Blog Button - Only for Doctors and Admins */}
-                    {canCreateBlog && (
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Link
-                                href="/blogs/new"
-                                className="inline-block px-8 py-3 bg-[#739AF0] text-white rounded-full font-semibold hover:bg-[#5a7dd0] transition-colors duration-300 shadow-lg"
-                            >
-                                ✍️ Create New Blog
-                            </Link>
-                        </motion.div>
-                    )}
                 </motion.div>
 
-                {/* Loading State */}
-                {loading && (
-                    <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#739AF0]"></div>
-                        <p className="mt-4 text-gray-600">Loading blogs...</p>
+                {/* Form */}
+                <motion.form
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    onSubmit={handleSubmit}
+                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100"
+                >
+                    {/* Title */}
+                    <div className="mb-6">
+                        <label
+                            htmlFor="title"
+                            className="block text-sm font-semibold text-[#0F2D52] mb-2"
+                        >
+                            Blog Title *
+                        </label>
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            placeholder="Enter an engaging title"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#739AF0] focus:ring-2 focus:ring-[#739AF0]/20 outline-none transition-all duration-300"
+                            required
+                        />
                     </div>
-                )}
 
-                {/* No Blogs State */}
-                {!loading && blogs.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center py-20"
-                    >
-                        <div className="text-6xl mb-4">📝</div>
-                        <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                            No blogs to show
-                        </h2>
-                        <p className="text-gray-500">
-                            {canCreateBlog
-                                ? 'Be the first to share your medical insights!'
-                                : 'Check back later for expert health articles.'}
-                        </p>
-                    </motion.div>
-                )}
+                    {/* Author Name - Read-only for doctors, editable for admins */}
+                    <div className="mb-6">
+                        <label
+                            htmlFor="authorName"
+                            className="block text-sm font-semibold text-[#0F2D52] mb-2"
+                        >
+                            Author Name *
+                        </label>
+                        <input
+                            type="text"
+                            id="authorName"
+                            name="authorName"
+                            value={formData.authorName}
+                            onChange={handleChange}
+                            placeholder="Your name"
+                            className={`w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#739AF0] focus:ring-2 focus:ring-[#739AF0]/20 outline-none transition-all duration-300 ${userRole === 'DOCTOR' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                            required
+                            readOnly={userRole === 'DOCTOR'}
+                        />
+                        {userRole === 'DOCTOR' && (
+                            <p className="text-xs text-gray-500 mt-1">Auto-filled from your account</p>
+                        )}
+                    </div>
 
-                {/* Blogs Grid */}
-                {!loading && blogs.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {blogs.map((blog, index) => (
-                            <motion.div
-                                key={blog.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+                    {/* Specialization - Read-only for Doctors, auto-filled from account */}
+                    {userRole === 'DOCTOR' && (
+                        <div className="mb-6">
+                            <label
+                                htmlFor="specialization"
+                                className="block text-sm font-semibold text-[#0F2D52] mb-2"
                             >
-                                {/* Blog Header */}
-                                <div className="mb-4">
-                                    <h2 className="text-xl font-bold text-[#0F2D52] mb-2 line-clamp-2">
-                                        {blog.title}
-                                    </h2>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                                        <span className="font-semibold">{blog.authorName}</span>
-                                        {blog.specialization && (
-                                            <>
-                                                <span>•</span>
-                                                <span className="text-[#739AF0]">
-                                                    {blog.specialization.replace(/_/g, ' ')}
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                        {formatDate(blog.createdAt)}
-                                    </div>
-                                </div>
+                                Specialization *
+                            </label>
+                            <input
+                                type="text"
+                                id="specialization"
+                                name="specialization"
+                                value={formData.specialization.replace(/_/g, ' ')}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-100 cursor-not-allowed outline-none"
+                                readOnly
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Auto-filled from your account</p>
+                        </div>
+                    )}
 
-                                {/* Blog Content Preview */}
-                                <p className="text-gray-700 line-clamp-4 mb-4">
-                                    {blog.content}
-                                </p>
-
-                                {/* Read More Button */}
-                                <button
-                                    onClick={() => {
-                                        setSelectedBlog(blog);
-                                        setIsModalOpen(true);
-                                    }}
-                                    className="text-[#739AF0] font-semibold hover:text-[#5a7dd0] transition-colors duration-300 text-sm"
-                                >
-                                    Read More →
-                                </button>
-
-                                {/* Role Badge */}
-                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                    <span
-                                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${blog.authorRole === 'DOCTOR'
-                                            ? 'bg-blue-100 text-blue-700'
-                                            : 'bg-purple-100 text-purple-700'
-                                            }`}
-                                    >
-                                        {blog.authorRole}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        ))}
+                    {/* Content */}
+                    <div className="mb-6">
+                        <label
+                            htmlFor="content"
+                            className="block text-sm font-semibold text-[#0F2D52] mb-2"
+                        >
+                            Blog Content *
+                        </label>
+                        <textarea
+                            id="content"
+                            name="content"
+                            value={formData.content}
+                            onChange={handleChange}
+                            placeholder="Write your blog content here..."
+                            rows={12}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-[#739AF0] focus:ring-2 focus:ring-[#739AF0]/20 outline-none transition-all duration-300 resize-vertical"
+                            required
+                        />
                     </div>
-                )}
-            </div>
 
-            {/* Blog View Modal */}
-            <BlogViewModal
-                isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setSelectedBlog(null);
-                }}
-                blog={selectedBlog}
-            />
+                    {/* Buttons */}
+                    <div className="flex gap-4">
+                        <motion.button
+                            type="button"
+                            onClick={() => router.push('/blogs')}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors duration-300"
+                        >
+                            Cancel
+                        </motion.button>
+                        <motion.button
+                            type="submit"
+                            disabled={submitting}
+                            whileHover={{ scale: submitting ? 1 : 1.02 }}
+                            whileTap={{ scale: submitting ? 1 : 0.98 }}
+                            className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-colors duration-300 ${submitting
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-[#739AF0] hover:bg-[#5a7dd0] text-white shadow-lg'
+                                }`}
+                        >
+                            {submitting ? 'Posting...' : '📝 Post Blog'}
+                        </motion.button>
+                    </div>
+                </motion.form>
+            </div>
         </div>
     );
 }
