@@ -3,16 +3,28 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import PrescriptionViewModal from '@/components/PrescriptionViewModal';
+import ReviewModal from '@/components/ReviewModal';
+import { formatSpecialization } from '@/utils/specializations';
 
 export default function PatientDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [confirmedAppointments, setConfirmedAppointments] = useState([]);
   const [pendingAppointments, setPendingAppointments] = useState([]);
+  const [ongoingAppointments, setOngoingAppointments] = useState([]);
+  const [completedAppointments, setCompletedAppointments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [bannerNote, setBannerNote] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('confirmed'); // 'confirmed' | 'pending' | 'notifications'
+  const [status, setStatus] = useState('');
+  const [activeTab, setActiveTab] = useState('confirmed'); // 'confirmed' | 'pending' | 'ongoing' | 'completed' | 'notifications'
+  const [prescriptions, setPrescriptions] = useState({});
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [selectedPrescription, setSelectedPrescription] = useState(null);
+  const [reviewStatuses, setReviewStatuses] = useState({});
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState(null);
 
   useEffect(() => {
     const userEmail = localStorage.getItem('userEmail');
@@ -77,6 +89,20 @@ export default function PatientDashboardPage() {
       if (pendingRes.ok) {
         setPendingAppointments(pendingData);
       }
+
+      // Fetch ongoing appointments
+      const ongoingRes = await fetch(`/api/appointments/ongoing?patientId=${user.id}`);
+      const ongoingData = await ongoingRes.json();
+      if (ongoingRes.ok) {
+        setOngoingAppointments(ongoingData);
+      }
+
+      // Fetch completed appointments
+      const completedRes = await fetch(`/api/appointments/completed?patientId=${user.id}`);
+      const completedData = await completedRes.json();
+      if (completedRes.ok) {
+        setCompletedAppointments(completedData);
+      }
     } catch (err) {
       console.error('Error fetching appointments:', err);
     } finally {
@@ -121,6 +147,65 @@ export default function PatientDashboardPage() {
     } catch (err) {
       console.error('Error marking all notifications read:', err);
     }
+  };
+
+  const fetchPrescriptionForAppointment = async (appointmentId) => {
+    try {
+      const res = await fetch(`/api/prescriptions/appointment?appointmentId=${appointmentId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPrescriptions((prev) => ({ ...prev, [appointmentId]: data }));
+      }
+    } catch (err) {
+      console.error('Error fetching prescription:', err);
+    }
+  };
+
+  const handleViewPrescription = (appointment) => {
+    const prescription = prescriptions[appointment.id];
+    if (prescription) {
+      // Will open modal to view prescription
+      setSelectedPrescription(prescription);
+      setShowPrescriptionModal(true);
+    }
+  };
+
+  // Fetch prescriptions for completed appointments
+  useEffect(() => {
+    if (completedAppointments.length > 0) {
+      completedAppointments.forEach((appointment) => {
+        fetchPrescriptionForAppointment(appointment.id);
+        fetchReviewStatus(appointment.id);
+      });
+    }
+  }, [completedAppointments]);
+
+  const fetchReviewStatus = async (appointmentId) => {
+    try {
+      const res = await fetch(`/api/reviews/check?appointmentId=${appointmentId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReviewStatuses((prev) => ({ ...prev, [appointmentId]: data }));
+      }
+    } catch (err) {
+      console.error('Error fetching review status:', err);
+    }
+  };
+
+  const handleLeaveReview = (appointment) => {
+    setSelectedAppointmentForReview(appointment);
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSuccess = (message) => {
+    setStatus(message);
+    setShowReviewModal(false);
+    setSelectedAppointmentForReview(null);
+    // Refresh review statuses
+    completedAppointments.forEach((appointment) => {
+      fetchReviewStatus(appointment.id);
+    });
+    setTimeout(() => setStatus(''), 3000);
   };
 
   const formatDateTime = (dateString) => {
@@ -235,8 +320,8 @@ export default function PatientDashboardPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'confirmed'
-                  ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
-                  : 'text-[#4a5568] hover:text-[#0F2D52]'
+                ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                : 'text-[#4a5568] hover:text-[#0F2D52]'
                 }`}
             >
               Confirmed Appointments ({confirmedAppointments.length})
@@ -246,19 +331,41 @@ export default function PatientDashboardPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'pending'
-                  ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
-                  : 'text-[#4a5568] hover:text-[#0F2D52]'
+                ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                : 'text-[#4a5568] hover:text-[#0F2D52]'
                 }`}
             >
               Pending Requests ({pendingAppointments.length})
+            </motion.button>
+            <motion.button
+              onClick={() => setActiveTab('ongoing')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'ongoing'
+                ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                : 'text-[#4a5568] hover:text-[#0F2D52]'
+                }`}
+            >
+              Ongoing ({ongoingAppointments.length})
+            </motion.button>
+            <motion.button
+              onClick={() => setActiveTab('completed')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'completed'
+                ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                : 'text-[#4a5568] hover:text-[#0F2D52]'
+                }`}
+            >
+              Completed ({completedAppointments.length})
             </motion.button>
             <motion.button
               onClick={() => setActiveTab('notifications')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={`px-6 py-3 font-semibold transition-colors duration-300 rounded-t-[20px] ${activeTab === 'notifications'
-                  ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
-                  : 'text-[#4a5568] hover:text-[#0F2D52]'
+                ? 'border-b-2 border-[#739AF0] text-[#739AF0] bg-[#F0F7FF]'
+                : 'text-[#4a5568] hover:text-[#0F2D52]'
                 }`}
             >
               Notifications ({notifications.length})
@@ -290,7 +397,7 @@ export default function PatientDashboardPage() {
                         <div>
                           <h3 className="font-bold text-xl text-[#0F2D52]">{appointment.doctor.user.name}</h3>
                           <p className="text-sm text-[#4a5568] font-medium mt-1">
-                            {appointment.doctor.specialization}
+                            {formatSpecialization(appointment.doctor.specialization)}
                           </p>
                           {appointment.doctor.user.contactNumber && (
                             <p className="text-sm text-[#4a5568] font-medium">{appointment.doctor.user.contactNumber}</p>
@@ -348,7 +455,7 @@ export default function PatientDashboardPage() {
                         <div>
                           <h3 className="font-bold text-xl text-[#0F2D52]">{appointment.doctor.user.name}</h3>
                           <p className="text-sm text-[#4a5568] font-medium mt-1">
-                            {appointment.doctor.specialization}
+                            {formatSpecialization(appointment.doctor.specialization)}
                           </p>
                           {appointment.doctor.user.contactNumber && (
                             <p className="text-sm text-[#4a5568] font-medium">{appointment.doctor.user.contactNumber}</p>
@@ -371,6 +478,157 @@ export default function PatientDashboardPage() {
                                 {appointment.status}
                               </span>
                             </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Ongoing Appointments Tab */}
+          {activeTab === 'ongoing' && (
+            <div>
+              <h2 className="text-2xl font-bold text-[#0F2D52] mb-6 tracking-wide">Ongoing Appointments</h2>
+              {ongoingAppointments.length === 0 ? (
+                <p className="text-[#4a5568] font-medium">No ongoing appointments at the moment.</p>
+              ) : (
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {ongoingAppointments.map((appointment) => {
+                    const { date: dateStr, time: timeStr } = formatDateTime(appointment.date);
+                    return (
+                      <motion.div
+                        key={appointment.id}
+                        variants={itemVariants}
+                        whileHover={{ y: -4 }}
+                        className="border-2 border-orange-400 rounded-[20px] p-6 bg-orange-50 card-shadow relative"
+                      >
+                        <div className="absolute top-4 right-4">
+                          <span className="inline-block px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold animate-pulse">
+                            IN PROGRESS
+                          </span>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-xl text-[#0F2D52]">{appointment.doctor.user.name}</h3>
+                          <p className="text-sm text-[#4a5568] font-medium mt-1">
+                            {formatSpecialization(appointment.doctor.specialization)}
+                          </p>
+                          {appointment.doctor.user.contactNumber && (
+                            <p className="text-sm text-[#4a5568] font-medium">{appointment.doctor.user.contactNumber}</p>
+                          )}
+                          <p className="text-sm text-[#4a5568] font-medium">{appointment.doctor.user.email}</p>
+                          <div className="mt-4 space-y-2">
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Date:</span> {dateStr}
+                            </p>
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Time:</span> {timeStr}
+                            </p>
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Type:</span>{' '}
+                              <span className="capitalize font-bold">{appointment.consultationType}</span>
+                            </p>
+                            <p className="text-sm font-semibold text-orange-600">
+                              <span className="font-bold">⏱️ Appointment window:</span> {timeStr} - {new Date(new Date(appointment.date).getTime() + 60 * 60 * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Completed Appointments Tab */}
+          {activeTab === 'completed' && (
+            <div>
+              <h2 className="text-2xl font-bold text-[#0F2D52] mb-6 tracking-wide">Completed Appointments</h2>
+              {completedAppointments.length === 0 ? (
+                <p className="text-[#4a5568] font-medium">No completed appointments yet.</p>
+              ) : (
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {completedAppointments.map((appointment) => {
+                    const { date: dateStr, time: timeStr } = formatDateTime(appointment.date);
+                    return (
+                      <motion.div
+                        key={appointment.id}
+                        variants={itemVariants}
+                        whileHover={{ y: -4 }}
+                        className="border-2 border-gray-300 rounded-[20px] p-6 bg-gray-50 card-shadow"
+                      >
+                        <div>
+                          <h3 className="font-bold text-xl text-[#0F2D52]">{appointment.doctor.user.name}</h3>
+                          <p className="text-sm text-[#4a5568] font-medium mt-1">
+                            {formatSpecialization(appointment.doctor.specialization)}
+                          </p>
+                          {appointment.doctor.user.contactNumber && (
+                            <p className="text-sm text-[#4a5568] font-medium">{appointment.doctor.user.contactNumber}</p>
+                          )}
+                          <p className="text-sm text-[#4a5568] font-medium">{appointment.doctor.user.email}</p>
+                          <div className="mt-4 space-y-2">
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Date:</span> {dateStr}
+                            </p>
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Time:</span> {timeStr}
+                            </p>
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Type:</span>{' '}
+                              <span className="capitalize font-bold">{appointment.consultationType}</span>
+                            </p>
+                            <p className="text-sm font-semibold text-[#0F2D52]">
+                              <span className="font-bold">Status:</span>{' '}
+                              <span className="inline-block px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-bold">
+                                COMPLETED
+                              </span>
+                            </p>
+                          </div>
+                          {/* View Prescription Button */}
+                          {prescriptions[appointment.id] && prescriptions[appointment.id].status === 'SENT' && (
+                            <div className="mt-4">
+                              <motion.button
+                                onClick={() => handleViewPrescription(appointment)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="w-full px-6 py-3 bg-green-500 text-white rounded-[20px] hover:bg-green-600 font-semibold shadow-lg"
+                              >
+                                📄 View Prescription
+                              </motion.button>
+                            </div>
+                          )}
+                          {/* Review Buttons */}
+                          <div className="mt-3">
+                            {reviewStatuses[appointment.id]?.hasReview ? (
+                              <div className="p-3 bg-green-50 border-2 border-green-200 rounded-[20px] text-center">
+                                <p className="text-sm font-semibold text-green-700">✓ Review Submitted</p>
+                                <p className="text-xs text-green-600 mt-1">
+                                  Rating: {reviewStatuses[appointment.id].review.rating} ⭐
+                                </p>
+                              </div>
+                            ) : (
+                              <motion.button
+                                onClick={() => handleLeaveReview(appointment)}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="w-full px-6 py-3 bg-[#739AF0] text-white rounded-[20px] hover:bg-[#5a7bc0] font-semibold shadow-lg"
+                              >
+                                ⭐ Leave Review
+                              </motion.button>
+                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -442,6 +700,31 @@ export default function PatientDashboardPage() {
             </div>
           )}
         </motion.div>
+
+        {/* Prescription View Modal */}
+        {showPrescriptionModal && selectedPrescription && (
+          <PrescriptionViewModal
+            isOpen={showPrescriptionModal}
+            onClose={() => {
+              setShowPrescriptionModal(false);
+              setSelectedPrescription(null);
+            }}
+            prescription={selectedPrescription}
+          />
+        )}
+
+        {/* Review Modal */}
+        {showReviewModal && selectedAppointmentForReview && (
+          <ReviewModal
+            isOpen={showReviewModal}
+            onClose={() => {
+              setShowReviewModal(false);
+              setSelectedAppointmentForReview(null);
+            }}
+            appointment={selectedAppointmentForReview}
+            onSuccess={handleReviewSuccess}
+          />
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { formatSpecialization } from '@/utils/specializations';
 
 export default function BookAppointmentPage() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function BookAppointmentPage() {
 
       const res = await fetch(`/api/find_doctor?${params.toString()}`);
       const data = await res.json();
-      
+
       if (res.ok) {
         setDoctors(data);
         // Extract unique specializations
@@ -91,7 +92,7 @@ export default function BookAppointmentPage() {
     try {
       setStatus('Booking appointment...');
       const appointmentDateTime = new Date(`${date}T${time}`);
-      
+
       const res = await fetch('/api/create_appointment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,7 +203,7 @@ export default function BookAppointmentPage() {
               >
                 <option value="">All Specializations</option>
                 {specializations.map((spec) => (
-                  <option key={spec} value={spec}>{spec}</option>
+                  <option key={spec} value={spec}>{formatSpecialization(spec)}</option>
                 ))}
               </select>
             </div>
@@ -238,11 +239,10 @@ export default function BookAppointmentPage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`mb-6 p-4 rounded-[20px] ${
-                status.includes('success') 
-                  ? 'bg-green-50 text-green-700 border-2 border-green-200' 
-                  : 'bg-red-50 text-red-700 border-2 border-red-200'
-              }`}
+              className={`mb-6 p-4 rounded-[20px] ${status.includes('success')
+                ? 'bg-green-50 text-green-700 border-2 border-green-200'
+                : 'bg-red-50 text-red-700 border-2 border-red-200'
+                }`}
             >
               {status}
             </motion.div>
@@ -269,24 +269,22 @@ export default function BookAppointmentPage() {
                     onClick={() => setSelectedDoctor(doctor)}
                     whileHover={{ y: -8, scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`p-6 border-2 rounded-[20px] cursor-pointer transition-all duration-300 card-shadow ${
-                      selectedDoctor?.id === doctor.id
-                        ? 'border-[#739AF0] bg-[#F0F7FF]'
-                        : 'border-[#F0F7FF] hover:border-[#739AF0] bg-white'
-                    }`}
+                    className={`p-6 border-2 rounded-[20px] cursor-pointer transition-all duration-300 card-shadow ${selectedDoctor?.id === doctor.id
+                      ? 'border-[#739AF0] bg-[#F0F7FF]'
+                      : 'border-[#F0F7FF] hover:border-[#739AF0] bg-white'
+                      }`}
                   >
                     <h3 className="font-bold text-xl text-[#0F2D52]">{doctor.user.name}</h3>
-                    <p className="text-sm text-[#4a5568] mt-2 font-medium">{doctor.specialization}</p>
+                    <p className="text-sm text-[#4a5568] mt-2 font-medium">{formatSpecialization(doctor.specialization)}</p>
                     <p className="text-xs text-[#4a5568] mt-1">{doctor.user.email}</p>
                     {doctor.user.contactNumber && (
                       <p className="text-xs text-[#4a5568] mt-1">{doctor.user.contactNumber}</p>
                     )}
                     <div className="mt-4">
-                      <span className={`inline-block px-3 py-1 text-xs rounded-full font-semibold ${
-                        doctor.availableToday
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
+                      <span className={`inline-block px-3 py-1 text-xs rounded-full font-semibold ${doctor.availableToday
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-700'
+                        }`}>
                         {doctor.availableToday ? 'Available Today' : 'Not Available Today'}
                       </span>
                     </div>
@@ -307,7 +305,7 @@ export default function BookAppointmentPage() {
               <div className="space-y-6">
                 <div>
                   <p className="text-sm font-semibold text-[#4a5568] mb-1">Selected Doctor:</p>
-                  <p className="text-xl font-bold text-[#0F2D52]">{selectedDoctor.user.name} - {selectedDoctor.specialization}</p>
+                  <p className="text-xl font-bold text-[#0F2D52]">{selectedDoctor.user.name} - {formatSpecialization(selectedDoctor.specialization)}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

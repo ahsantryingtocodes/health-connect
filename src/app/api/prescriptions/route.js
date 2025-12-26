@@ -38,6 +38,7 @@ export async function POST(request) {
 
     return NextResponse.json({ message: 'Prescription draft created', prescription });
   } catch (error) {
-    return NextResponse.json({ message: 'Failed to create prescription' }, { status: 500 });
+    console.error('Error creating prescription:', error);
+    return NextResponse.json({ message: 'Failed to create prescription', error: error.message }, { status: 500 });
   }
 }

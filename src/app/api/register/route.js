@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+const VALID_SPECIALIZATIONS = [
+  'CARDIOLOGY',
+  'DERMATOLOGY',
+  'PEDIATRICS',
+  'NEUROLOGY',
+  'ORTHOPEDICS',
+  'PSYCHIATRY',
+  'GENERAL_PRACTICE',
+  'ONCOLOGY'
+];
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -26,16 +37,24 @@ export async function POST(request) {
       );
     }
 
-    // 3. Determine Verification Status
+    // 3. Validate specialization is a valid enum value
+    if (role === 'DOCTOR' && !VALID_SPECIALIZATIONS.includes(specialization)) {
+      return NextResponse.json(
+        { message: 'Invalid specialization selected.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Determine Verification Status
     // Doctors must be verified by an admin (false), Patients are auto-verified (true)
     const isVerified = role === 'DOCTOR' ? false : true;
 
-    // 4. Create User
+    // 5. Create User
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
-        password, 
+        password,
         role,
         contactNumber,
         specialization: role === 'DOCTOR' ? specialization : null,

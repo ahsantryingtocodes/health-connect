@@ -33,7 +33,7 @@ export async function PATCH(request) {
     // Update user verification status
     const updatedUser = await prisma.user.update({
       where: { email },
-      data: { 
+      data: {
         isVerified: isVerified,
         ...(role && { role: role })
       },
@@ -47,11 +47,11 @@ export async function PATCH(request) {
       });
 
       if (!existingProfile) {
-        // Create DoctorProfile
+        // Create DoctorProfile with enum specialization from User
         await prisma.doctorProfile.create({
           data: {
             userId: updatedUser.id,
-            specialization: updatedUser.specialization,
+            specialization: updatedUser.specialization, // This is already an enum value
             availableToday: false,
           },
         });

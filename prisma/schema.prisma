@@ -22,6 +22,8 @@ model User {
   appointments  Appointment[]
   doctorPrescriptions  Prescription[] @relation("DoctorPrescriptions")
   patientPrescriptions Prescription[] @relation("PatientPrescriptions")
+  patientReviews Review[] @relation("PatientReviews")
+  doctorReviews Review[] @relation("DoctorReviews")
 }
 
 enum Role {
@@ -30,16 +32,26 @@ enum Role {
   ADMIN
 }
 
-model DoctorProfile {
-  id             Int     @id @default(autoincrement())
-  userId         Int     @unique
-  specialization String
-  availableToday Boolean @default(false)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
+enum Specialization {
+  CARDIOLOGY
+  DERMATOLOGY
+  PEDIATRICS
+  NEUROLOGY
+  ORTHOPEDICS
+  PSYCHIATRY
+  GENERAL_PRACTICE
+  ONCOLOGY
 }
 
+model DoctorProfile {
+  id             Int            @id @default(autoincrement())
+  userId         Int            @unique
+  specialization Specialization
+  availableToday Boolean        @default(false)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+}
 model Appointment {
   id              Int      @id @default(autoincrement())
   patientId       Int
@@ -52,6 +64,7 @@ model Appointment {
   doctor  DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
 
   prescription Prescription?
+  review Review?
   createdAt DateTime @default(now())
 }
 
@@ -92,6 +105,23 @@ model Notification {
   message    String
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  appointmentId Int      @unique
+  patientId     Int
+  doctorId      Int
+  
+  rating        Int      // 1-5 stars
+  comment       String?  // Optional text review
+  
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patient       User        @relation("PatientReviews", fields: [patientId], references: [id])
+  doctor        User        @relation("DoctorReviews", fields: [doctorId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Blog {

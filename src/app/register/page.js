@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { getSpecializationOptions } from '@/utils/specializations';
 
 export default function RegistrationPage() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function RegistrationPage() {
         className="bg-white p-10 rounded-[24px] card-shadow w-full max-w-md"
       >
         <h2 className="text-3xl font-bold mb-8 text-center text-[#0F2D52] tracking-wide">Create Account</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-[#0F2D52] mb-2">Full Name</label>
@@ -116,15 +117,20 @@ export default function RegistrationPage() {
           {formData.role === 'DOCTOR' && (
             <div>
               <label className="block text-sm font-semibold text-[#0F2D52] mb-2">Specialization *</label>
-              <input
-                type="text"
+              <select
                 name="specialization"
                 required
-                placeholder="e.g. Cardiology, Pediatrics, General Medicine"
-                className="w-full p-3 border-2 border-[#F0F7FF] rounded-[20px] focus:ring-2 focus:ring-[#739AF0] focus:border-[#739AF0] text-[#0F2D52] transition-all duration-300"
+                className="w-full p-3 border-2 border-[#F0F7FF] rounded-[20px] focus:ring-2 focus:ring-[#739AF0] focus:border-[#739AF0] bg-white text-[#0F2D52] transition-all duration-300"
                 onChange={handleChange}
                 value={formData.specialization}
-              />
+              >
+                <option value="">Select Specialization</option>
+                {getSpecializationOptions().map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
