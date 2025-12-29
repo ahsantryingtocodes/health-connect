@@ -6,7 +6,8 @@
     "dev": "next dev -p 1121",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "socket-server": "node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -16,7 +17,9 @@
     "jspdf-autotable": "^5.0.2",
     "next": "^16.0.7",
     "react": "^19.2.1",
-    "react-dom": "^19.2.1"
+    "react-dom": "^19.2.1",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
     "@prisma/client": "^5.19.0",

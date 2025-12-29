@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import crypto from 'crypto';
 
 // 1. POST: Create new appointment
 export async function POST(request) {
@@ -11,12 +12,16 @@ export async function POST(request) {
       return NextResponse.json({ message: 'All fields are required' }, { status: 400 });
     }
 
+    // Generate unique room ID for chat/video
+    const roomId = crypto.randomUUID();
+
     const appointment = await prisma.appointment.create({
       data: {
         patientId,
         doctorProfileId,
         consultationType,
         date: new Date(date),
+        roomId, // Add unique room identifier
       },
     });
 

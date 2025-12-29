@@ -59,6 +59,7 @@ model Appointment {
   consultationType String
   date            DateTime
   status          String   @default("PENDING")
+  roomId          String?  @unique // Unique room identifier for chat/video
 
   patient User          @relation(fields: [patientId], references: [id], onDelete: Cascade)
   doctor  DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
