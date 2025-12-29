@@ -82,21 +82,36 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            // Check if there are already users in the room
+            const roomSockets = await io.in(roomId).fetchSockets();
+            const otherUsersInRoom = roomSockets.length > 0;
+
             // Join the room
             socket.join(roomId);
 
             // Store connection info
             activeConnections.set(socket.id, { userId, userRole, roomId, userName });
 
-            console.log(`👤 ${userName} (${userRole}) joined room: ${roomId} `);
+            console.log(`👤 ${userName} (${userRole}) joined room: ${roomId}`);
 
-            // Notify others in the room
-            socket.to(roomId).emit('user-joined', {
-                userId,
-                userRole,
-                userName,
-                socketId: socket.id
-            });
+            // If there are other users, notify them AND notify this user about them
+            if (otherUsersInRoom) {
+                console.log(`🔔 Notifying existing users in room ${roomId}`);
+                // Notify others that this user joined
+                socket.to(roomId).emit('user-joined', {
+                    userId,
+                    userRole,
+                    userName,
+                    socketId: socket.id
+                });
+
+                // Notify this user that others are already here (trigger them to create offer)
+                socket.emit('user-already-in-room', {
+                    message: 'Other users are in the room'
+                });
+            } else {
+                console.log(`📭 First user in room ${roomId}`);
+            }
 
             socket.emit('joined-room', { roomId, message: 'Successfully joined room' });
         } catch (error) {

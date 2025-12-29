@@ -195,6 +195,12 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
             console.log('Joined video call room');
         });
 
+        // Room already has users - create offer immediately
+        newSocket.on('user-already-in-room', async () => {
+            console.log('Other users already in room, creating offer');
+            await createOffer();
+        });
+
         // Another user joined - initiate call
         newSocket.on('user-joined', async ({ socketId }) => {
             console.log('Other user joined, creating offer');
