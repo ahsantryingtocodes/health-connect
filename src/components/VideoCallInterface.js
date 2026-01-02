@@ -8,7 +8,8 @@ import {
     StreamVideo,
     StreamTheme,
     ParticipantView,
-    useCallStateHooks
+    useCallStateHooks,
+    useCall
 } from '@stream-io/video-react-sdk';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 
@@ -71,14 +72,6 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
                 // Create/join call
                 const videoCall = videoClient.call('default', callId);
                 await videoCall.join({ create: true });
-
-                // Disable camera and mic by default as requested
-                try {
-                    if (videoCall.camera) await videoCall.camera.disable();
-                    if (videoCall.microphone) await videoCall.microphone.disable();
-                } catch (e) {
-                    console.warn('Failed to disable devices on join:', e);
-                }
 
                 setCall(videoCall);
                 callRef.current = videoCall;
@@ -213,16 +206,23 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
  * Separated to use Stream hooks properly
  */
 function VideoCallUI({ user, appointment, onLeave }) {
+    // Get the call instance directly
+    const call = useCall();
     const { useParticipants, useLocalParticipant, useCameraState, useMicrophoneState } = useCallStateHooks();
+
     const participants = useParticipants();
     const localParticipant = useLocalParticipant();
-    const { camera, isMute: isCameraMuted } = useCameraState();
-    const { microphone, isMute: isMicMuted } = useMicrophoneState();
+
+    // We still use these for STATE (to know if red/gray)
+    const { isMute: isCameraMuted } = useCameraState();
+    const { isMute: isMicMuted } = useMicrophoneState();
+
     const [showLeftMessage, setShowLeftMessage] = useState(false);
     const hadRemoteParticipantRef = useRef(false);
 
     // Get remote participant (the other person in the call)
-    const remoteParticipant = participants.find(p => p.userId !== localParticipant?.userId);
+    // Filter out local user and look for anyone else
+    const remoteParticipant = participants.find(p => p.sessionId !== localParticipant?.sessionId);
 
     // Track if we ever had a remote participant
     useEffect(() => {
@@ -233,10 +233,8 @@ function VideoCallUI({ user, appointment, onLeave }) {
 
     // Detect when remote participant leaves
     useEffect(() => {
-        // If we had a remote participant but now we don't, they left
         if (hadRemoteParticipantRef.current && !remoteParticipant) {
             setShowLeftMessage(true);
-            // Auto-leave after 3 seconds
             const timer = setTimeout(() => {
                 onLeave();
             }, 3000);
@@ -246,11 +244,12 @@ function VideoCallUI({ user, appointment, onLeave }) {
 
     const toggleCamera = async () => {
         try {
-            if (camera) {
+            if (call) {
+                // Use the call object directly for reliable control
                 if (isCameraMuted) {
-                    await camera.enable();
+                    await call.camera.enable();
                 } else {
-                    await camera.disable();
+                    await call.camera.disable();
                 }
             }
         } catch (err) {
@@ -260,11 +259,12 @@ function VideoCallUI({ user, appointment, onLeave }) {
 
     const toggleMic = async () => {
         try {
-            if (microphone) {
+            if (call) {
+                // Use the call object directly for reliable control
                 if (isMicMuted) {
-                    await microphone.enable();
+                    await call.microphone.enable();
                 } else {
-                    await microphone.disable();
+                    await call.microphone.disable();
                 }
             }
         } catch (err) {
