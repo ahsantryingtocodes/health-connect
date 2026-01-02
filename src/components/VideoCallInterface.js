@@ -28,6 +28,10 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
     const [error, setError] = useState(null);
     const hasLeftRef = useRef(false);
 
+    // Refs to hold instances for cleanup
+    const clientRef = useRef(null);
+    const callRef = useRef(null);
+
     useEffect(() => {
         const initializeCall = async () => {
             try {
@@ -62,6 +66,7 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
                 });
 
                 setClient(videoClient);
+                clientRef.current = videoClient;
 
                 // Create/join call
                 const videoCall = videoClient.call('default', callId);
@@ -76,6 +81,7 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
                 }
 
                 setCall(videoCall);
+                callRef.current = videoCall;
                 setLoading(false);
             } catch (err) {
                 console.error('Video call initialization error:', err);
@@ -90,11 +96,22 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
         return () => {
             if (!hasLeftRef.current) {
                 hasLeftRef.current = true;
-                if (call) {
-                    call.leave().catch(console.error);
+
+                const activeCall = callRef.current;
+                const activeClient = clientRef.current;
+
+                if (activeCall) {
+                    // Explicitly stop tracks to turn off camera light
+                    try {
+                        activeCall.camera.disable();
+                        activeCall.microphone.disable();
+                    } catch (e) {
+                        console.warn('Error disabling devices on cleanup:', e);
+                    }
+                    activeCall.leave().catch(console.error);
                 }
-                if (client) {
-                    client.disconnectUser().catch(console.error);
+                if (activeClient) {
+                    activeClient.disconnectUser().catch(console.error);
                 }
             }
         };
@@ -110,6 +127,13 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
 
         try {
             if (call) {
+                // Explicitly stop tracks to turn off camera light
+                try {
+                    await call.camera.disable();
+                    await call.microphone.disable();
+                } catch (e) {
+                    console.warn('Error disabling devices on leave:', e);
+                }
                 await call.leave();
             }
         } catch (err) {
