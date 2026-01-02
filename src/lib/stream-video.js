@@ -1,25 +1,25 @@
-import jwt from 'jsonwebtoken';
+// src/lib/stream-video.js
+import { StreamClient } from "@stream-io/node-sdk";
 
-/**
- * Generate a Stream Video JWT token for a user
- * This creates a properly signed JWT token that Stream.io will accept
- */
-const generateVideoToken = (userId, expirationInSeconds = 24 * 60 * 60) => {
-    const apiSecret = process.env.STREAM_VIDEO_API_SECRET;
+const apiKey = process.env.NEXT_PUBLIC_STREAM_VIDEO_API_KEY;
+const apiSecret = process.env.STREAM_VIDEO_API_SECRET;
 
-    if (!apiSecret) {
-        throw new Error('STREAM_VIDEO_API_SECRET is not configured in environment variables');
+export const generateVideoToken = (userId) => {
+    if (!apiKey || !apiSecret) {
+        throw new Error("Missing Stream API Key or Secret");
     }
 
-    const now = Math.floor(Date.now() / 1000);
-    const payload = {
-        user_id: userId,
-        iat: now,
-        exp: now + expirationInSeconds
-    };
+    // Initialize the server-side client
+    const client = new StreamClient(apiKey, apiSecret);
 
-    return jwt.sign(payload, apiSecret, { algorithm: 'HS256' });
+    // Generate token valid for 1 hour (3600 seconds)
+    // We strictly convert userId to string to prevent type errors
+    const token = client.generateUserToken({
+        user_id: String(userId),
+        validity_in_seconds: 3600
+    });
+
+    return token;
 };
 
-export { generateVideoToken };
 export default generateVideoToken;

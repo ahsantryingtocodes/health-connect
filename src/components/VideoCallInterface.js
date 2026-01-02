@@ -16,37 +16,40 @@ import '@stream-io/video-react-sdk/dist/css/styles.css';
 /**
  * VideoCallInterface Component
  * Stream.io video calling interface for ongoing appointments
- * 
- * @param {Object} props
- * @param {Object} props.appointment - The appointment object with id
- * @param {Object} props.user - The current user object (patient or doctor)
- * @param {Function} props.onClose - Callback to close and redirect
  */
 export default function VideoCallInterface({ appointment, user, onClose }) {
+    // --- STATE MANAGEMENT ---
     const [client, setClient] = useState(null);
     const [call, setCall] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Refs to track status and instances for cleanup
     const hasLeftRef = useRef(false);
-
-    // Refs to hold instances for cleanup
     const clientRef = useRef(null);
     const callRef = useRef(null);
 
+    // --- INITIALIZATION LOGIC (FIXED) ---
     useEffect(() => {
+        let isMounted = true;
+
         const initializeCall = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // Fetch video token from API
+                // 1. Sanitize IDs (Stream allows only alphanumeric, _, -)
+                const safeUserId = user.id.toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+                const safeCallId = appointment.id.toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+
+                // 2. Fetch video token from API
                 const response = await fetch('/api/video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        userId: user.id.toString(),
+                        userId: safeUserId,
                         userName: user.name,
-                        appointmentId: appointment.id.toString()
+                        appointmentId: safeCallId
                     })
                 });
 
@@ -54,13 +57,15 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
                     throw new Error('Failed to fetch video token');
                 }
 
-                const { token, apiKey, callId } = await response.json();
+                const { token, apiKey } = await response.json();
 
-                // Initialize Stream Video client
+                if (!isMounted) return;
+
+                // 3. Initialize Stream Video client
                 const videoClient = new StreamVideoClient({
                     apiKey,
                     user: {
-                        id: user.id.toString(),
+                        id: safeUserId,
                         name: user.name
                     },
                     token
@@ -69,47 +74,52 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
                 setClient(videoClient);
                 clientRef.current = videoClient;
 
-                // Create/join call
-                const videoCall = videoClient.call('default', callId);
+                // 4. Create/join call
+                const videoCall = videoClient.call('default', safeCallId);
                 await videoCall.join({ create: true });
+
+                if (!isMounted) return;
 
                 setCall(videoCall);
                 callRef.current = videoCall;
                 setLoading(false);
+
             } catch (err) {
                 console.error('Video call initialization error:', err);
-                setError(err.message || 'Failed to initialize video call');
-                setLoading(false);
+                if (isMounted) {
+                    setError(err.message || 'Failed to initialize video call');
+                    setLoading(false);
+                }
             }
         };
 
         initializeCall();
 
-        // Cleanup on unmount
+        // Cleanup on unmount (e.g., if user closes tab or navigates away)
         return () => {
+            isMounted = false;
             if (!hasLeftRef.current) {
-                hasLeftRef.current = true;
-
+                // We don't mark hasLeftRef=true here to allow strict mode re-mounts,
+                // but we clean up the existing instances.
                 const activeCall = callRef.current;
                 const activeClient = clientRef.current;
 
                 if (activeCall) {
-                    // Explicitly stop tracks to turn off camera light
+                    // Try to disable media first
                     try {
                         activeCall.camera.disable();
                         activeCall.microphone.disable();
-                    } catch (e) {
-                        console.warn('Error disabling devices on cleanup:', e);
-                    }
-                    activeCall.leave().catch(console.error);
+                    } catch (e) { console.warn(e); }
+                    activeCall.leave().catch(console.warn);
                 }
                 if (activeClient) {
-                    activeClient.disconnectUser().catch(console.error);
+                    activeClient.disconnectUser().catch(console.warn);
                 }
             }
         };
     }, [appointment.id, user.id, user.name]);
 
+    // --- LEAVE CALL HANDLER ---
     const handleLeaveCall = async () => {
         if (hasLeftRef.current) {
             onClose();
@@ -119,32 +129,30 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
         hasLeftRef.current = true;
 
         try {
-            if (call) {
-                // Explicitly stop tracks to turn off camera light
-                try {
-                    await call.camera.disable();
-                    await call.microphone.disable();
-                } catch (e) {
-                    console.warn('Error disabling devices on leave:', e);
-                }
-                await call.leave();
+            const activeCall = callRef.current || call;
+            if (activeCall) {
+                await activeCall.camera.disable();
+                await activeCall.microphone.disable();
+                await activeCall.leave();
             }
         } catch (err) {
             console.error('Error leaving call:', err);
         }
 
         try {
-            if (client) {
-                await client.disconnectUser();
+            const activeClient = clientRef.current || client;
+            if (activeClient) {
+                await activeClient.disconnectUser();
             }
         } catch (err) {
             console.error('Error disconnecting client:', err);
         }
 
-        // Always close, even if there were errors
         onClose();
     };
 
+    // --- YOUR ORIGINAL UI RENDER ---
+    
     if (loading) {
         return (
             <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
@@ -201,10 +209,7 @@ export default function VideoCallInterface({ appointment, user, onClose }) {
     );
 }
 
-/**
- * VideoCallUI Component - Renders the actual video interface
- * Separated to use Stream hooks properly
- */
+
 function VideoCallUI({ user, appointment, onLeave }) {
     // Get the call instance directly
     const call = useCall();
